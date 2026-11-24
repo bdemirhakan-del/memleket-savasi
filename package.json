@@ -1,0 +1,12 @@
+{
+  "name": "memleket-savasi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Memleket Savaşı - TikTok canlı yayın oyunu sunucusu",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "tiktok-live-connector": "*",
+    "ws": "^8.18.0"
+  }
+}

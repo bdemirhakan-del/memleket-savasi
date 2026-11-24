@@ -1,0 +1,5 @@
+node_modules/
+stats.json
+stats.json.*
+log.txt
+log.txt.eski
