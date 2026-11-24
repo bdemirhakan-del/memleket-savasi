@@ -178,7 +178,7 @@ function restartTikTok() {
 async function connectTikTok() {
   if (!cfg.tiktokKullanici) { tiktokState = 'kullanıcı adı yok'; log('config.json içinde tiktokKullanici boş. Oyun deneme modunda çalışıyor.'); return; }
   let lib;
-  try { lib = require('tiktok-live-connector'); } catch (e) { log('tiktok-live-connector yüklenemedi:', e.message); return; }
+  try { lib = await import('tiktok-live-connector'); } catch (e) { log('tiktok-live-connector yüklenemedi:', e.message); tiktokState = 'paket yüklenemedi'; return; }
   const { TikTokLiveConnection, WebcastEvent, ControlEvent } = lib;
   const opts = {};
   if (cfg.signApiKey) opts.signApiKey = cfg.signApiKey;
