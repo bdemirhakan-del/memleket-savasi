@@ -75,12 +75,47 @@ function recordRound(m) {
 const PUBLIC = path.join(DIR, 'public');
 const server = http.createServer((req, res) => {
   const url = (req.url || '/').split('?')[0];
+  if (url === '/api/ayar' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ tiktokKullanici: cfg.tiktokKullanici, turSuresiSaniye: cfg.turSuresiSaniye, salonAralikSaniye: cfg.salonAralikSaniye }));
+    return;
+  }
+  if (url === '/api/stats' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(stats));
+    return;
+  }
+  if ((url === '/api/ayar' || url === '/api/komut') && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => { body += c; if (body.length > 10000) req.destroy(); });
+    req.on('end', () => {
+      let j = {}; try { j = JSON.parse(body || '{}'); } catch (e) {}
+      const ok = (o) => { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(o || { ok: true })); };
+      if (url === '/api/ayar') {
+        let raw = {};
+        try { raw = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8').replace(/^\uFEFF/, '')); } catch (e) {}
+        delete raw['memleket.savasi'];
+        if (typeof j.tiktokKullanici === 'string') raw.tiktokKullanici = j.tiktokKullanici.replace(/^@/, '').trim();
+        const ts = parseInt(j.turSuresiSaniye, 10); if (ts >= 30 && ts <= 3600) raw.turSuresiSaniye = ts;
+        const sa = parseInt(j.salonAralikSaniye, 10); if (sa >= 0 && sa <= 3600) raw.salonAralikSaniye = sa;
+        if (raw.port === undefined) raw.port = cfg.port;
+        try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(raw, null, 2)); ok(); log('Ayarlar panelden kaydedildi.'); } catch (e) { res.writeHead(500); res.end('kaydedilemedi'); }
+      } else {
+        if (j.komut === 'salon') broadcast({ type: 'showHall' });
+        else if (j.komut === 'yenitur') broadcast({ type: 'newRound' });
+        else if (j.komut === 'sifirla') { stats = { rounds: 0, players: {}, provs: {} }; saveStats(); broadcast({ type: 'stats', data: stats }); log('Istatistik panelden sifirlandi.'); }
+        ok();
+      }
+    });
+    return;
+  }
+  if (url === '/panel') { req.url = '/panel.html'; }
   if (url === '/durum') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ tiktok: tiktokState, izleyiciSayisi: wss.clients.size, tur: stats.rounds }));
     return;
   }
-  const file = path.join(PUBLIC, url === '/' ? 'index.html' : url.replace(/\.\./g, ''));
+  const file = path.join(PUBLIC, url === '/' ? 'index.html' : (url === '/panel' ? 'panel.html' : url.replace(/\.\./g, '')));
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); res.end('Bulunamadi'); return; }
     const ext = path.extname(file).toLowerCase();

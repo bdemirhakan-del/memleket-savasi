@@ -254,6 +254,7 @@ function handle(ev){
     return;
   }
   if(ev&&ev.type==='showHall'){hallT=HALL_SHOW;return;}
+  if(ev&&ev.type==='newRound'){newRound();return;}
   if(!S||S.state!=='play')return;
   const name=ev.user||'Biri';
   const u=getUser(name);
